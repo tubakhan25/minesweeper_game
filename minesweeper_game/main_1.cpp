@@ -108,6 +108,9 @@ void openEmptyCells(int board[][9], int row, int col, sf::RectangleShape grid[][
 				if (i > 8 || j > 8 || i < 0 || j < 0) {
 					continue;
 				}
+				if (grid[i][j].getFillColor() == sf::Color::Red) {
+					continue;
+				}
 				if (grid[i][j].getFillColor() == sf::Color::Transparent) {
 					continue;// stops empty cells from calling function again and again
 				}
@@ -156,6 +159,7 @@ int main()
 //
 
 	sf::RenderWindow window(sf::VideoMode({ 900, 900 }), "Minesweeper");
+	int win = 0;
 	int over = 0;
 	int flag = 0;
 	float wind_x = 900;
@@ -199,7 +203,9 @@ int main()
 	sf::FloatRect Tbounds = text.getLocalBounds();
 	text.setOrigin(Tbounds.position + Tbounds.size / 2.f);
 
-
+	sf::Text won(font, "GAME WON!", 200);
+	won.setPosition({ 250, 250 });
+	won.setFillColor(sf::Color::Green);
 	sf::Text flagCount(font, char(flag + '0'), 70);
 	flagCount.setPosition({ 200,50 });
 	flagCount.setFillColor(sf::Color::Black);
@@ -216,16 +222,22 @@ int main()
 
 
 	// %%%%%%%%%%%%%%%%%% sprites &&&&&&&&&&&&&&&&&&&&&
+	sf::Texture texture2;
+	if (!texture2.loadFromFile("flag_game.jpg")) {
+		cout << "error 2";
+	}
 	sf::Texture texture;
 	if (!texture.loadFromFile("mine_bomb.jpg")) {
 		cout << "error";
 	}
 
+	sf::Sprite flag_img(texture2);
+	flag_img.setScale({ 0.04f,0.04f });
 
-	sf::Sprite sprite(texture);
+	sf::Sprite bomb(texture);
 	//sf::FloatRect bounds = sprite.getLocalBounds();
 	//sprite.setOrigin(bounds.position + bounds.size / 2.f);
-	sprite.setScale({ 0.06f,0.06f });
+	bomb.setScale({ 0.06f,0.06f });
 
 
 	window.setFramerateLimit(60);
@@ -264,7 +276,10 @@ int main()
 									if (Rboard[i][j] == 'M') {
 										for (int i = 0;i < 9;i++) {
 											for (int j = 0;j < 9;j++) {
-												grid[i][j].setFillColor(sf::Color::Transparent);
+												if (Rboard[i][j] == 'M')
+												{
+													grid[i][j].setFillColor(sf::Color::Transparent);
+												}
 												over = 1;
 
 											}
@@ -288,6 +303,7 @@ int main()
 									grid[i][j].setFillColor(sf::Color::Red);
 									flag++;
 									flagCount.setString(char(flag + '0'));
+									//sprite
 
 
 								}
@@ -314,6 +330,8 @@ int main()
 		float tx = 155;  //
 		float ty = 155;
 		//text drawing
+
+
 		for (int i = 0;i < 9;i++) {
 			for (int j = 0;j < 9;j++) {
 
@@ -324,13 +342,22 @@ int main()
 				sf::Text text(font, ch, 36);
 				text.setFillColor(sf::Color::Black);
 				text.setPosition({ tx,ty });
-				sprite.setPosition({ tx,ty });
+				bomb.setPosition({ tx,ty });
 				if (ch == 'M') {
-					window.draw(sprite);
+					window.draw(bomb);
 				}
 				else
 				{
 					text.setPosition({ tx + 10,ty + 10 });
+					if (text.getString() == '1') {
+						text.setFillColor(sf::Color::Blue);
+					}
+					else if (text.getString() == '2') {
+						text.setFillColor(sf::Color::Green);
+					}
+					else if (text.getString() == '3') {
+						text.setFillColor(sf::Color::Red);
+					}
 					window.draw(text);
 				}
 
@@ -358,9 +385,27 @@ int main()
 			}
 			posy += csize + gap;
 		}
+
+		//window.draw(flag_img);
 		if (over == 1) {
 			window.draw(gameOver);
 		}
+
+
+		for (int i = 0;i < 9;i++) {
+			for (int j = 0;j < 9;j++)
+			{
+				if (grid[i][j].getFillColor() == sf::Color::Red)
+				{
+					flag_img.setPosition({ float(j * gap + 50 * j) + 155 ,float(i * gap + 50 * i) + 155 });
+					window.draw(flag_img);
+				}
+
+
+			}
+		}
+
+
 
 
 
