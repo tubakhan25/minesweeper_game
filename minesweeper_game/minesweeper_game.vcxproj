@@ -145,8 +145,6 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="hardLevel.cpp" />
-    <ClCompile Include="level2.cpp" />
     <ClCompile Include="main_1.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

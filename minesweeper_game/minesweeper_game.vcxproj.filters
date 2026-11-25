@@ -18,11 +18,5 @@
     <ClCompile Include="main_1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="level2.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="hardLevel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>
