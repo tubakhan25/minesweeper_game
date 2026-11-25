@@ -1,35 +1,32 @@
 #include <SFML/Graphics.hpp>
 #include <optional>
 #include <iostream>
+#include <ctime>
+#include <cstdlib>
 using namespace std;
-
 
 // %%%%%%%%%%%%%%%%% ALL ZEROES %%%%%%%%%%%%%%%%%%%
 
-void makeBoard(int board[][9])
+void makeBoard(int board[][100], int rows, int cols)
 {
-	for (int i = 0; i < 9;i++)
-	{
-		for (int j = 0;j < 9;j++)
-		{
+	for (int i = 0; i < rows; i++)
+		for (int j = 0; j < cols; j++)
 			board[i][j] = 0;
-		}
-	}
 }
 
 
 // %%%%%%%%%%%%%%%%% PLACE MINES %%%%%%%%%%%%%%%%
 
-void placeMines(int board[][9], int mines, int saferow, int safecol)
+void placeMines(int board[][100], int rows, int cols, int mines, int saferow, int safecol)
 {
 	int n = 0;
 	while (n < mines)
 	{
-		int x = rand() % 9;                 //for random cell
-		int y = rand() % 9;
+		int x = rand() % rows;              //for random cell
+		int y = rand() % cols;
 		if (x == saferow && y == safecol)
-			continue;                       // saferow and safecol(the first click) cannot be a mine
-		if (board[x][y] != -1)              // if there is altready mine , skip it
+			continue;                       // the first click cannot be a mine
+		if (board[x][y] != -1)              // if there is already a mine, skip it
 		{
 			board[x][y] = -1;
 			n++;
@@ -38,187 +35,128 @@ void placeMines(int board[][9], int mines, int saferow, int safecol)
 }
 
 
+// %%%%%%%%%%%% COUNT MINES AROUND EACH CELL %%%%%%%%%%%%
 
-
-
-// %%%%%%%%%%%% TO COUNT MINES THAT EACH CELLS HAVE IN ITS SURROUNDINGS %%%%%%%%%%%%
-
-void minesCount(int board[][9])
+void minesCount(int board[][100], int rows, int cols)
 {
-	for (int r = 0;r < 9;r++)
+	for (int r = 0; r < rows; r++)
 	{
-		for (int c = 0;c < 9;c++)
+		for (int c = 0; c < cols; c++)
 		{
-			if (board[r][c] != -1)                                   //if cell is not a mine
+			if (board[r][c] != -1)
 			{
 				int count = 0;
-				for (int i = r - 1;i <= r + 1;i++)                   // checking mines in neighbours
-				{
-					for (int j = c - 1;j <= c + 1;j++)
-					{
-						if (i >= 0 && i < 9 && j >= 0 && j < 9 && board[i][j] == -1)
-						{                                              //if it is -1(mine) and underboundary then count++
+				for (int i = r - 1; i <= r + 1; i++)
+					for (int j = c - 1; j <= c + 1; j++)
+						if (i >= 0 && i < rows && j >= 0 && j < cols && board[i][j] == -1)
 							count++;
-
-						}
-					}
-				}
-				board[r][c] = count;                                  //put the mine number(cell has in its surroundings)in that cell
+				board[r][c] = count;
 			}
 		}
 	}
 }
 
-
-//void emptyCellOpen(char Rboard[][9],int board[][9], int row, int col) {
-//
-//	if (row < 0 || row >= 9 || col < 0 || col >= 9)                   //outside boundary
-//				return;
-//		
-//			if (Rboard[row][col] != '# ')                                      //if already opened or flaged
-//				return;
-//		
-//
-//	if (board[row][col] == 0)
-//			{
-//				for (int i = -1; i <= 1; ++i)
-//				{
-//					for (int j = -1; j <= 1; ++j)
-//					{
-//						if (i != 0 || j != 0)                                // leave the cell own(0,0) position
-//						{
-//							int r = row + i;
-//							int c = col + j;
-//							emptyCellOpen(Rboard,board, i, j);
-//						}
-//		
-//					}
-//				}
-//			}
-//}
 
 // &&&&&&&&&& empty cells open &&&&&&&&&&&&
-void openEmptyCells(int board[][9], int row, int col, sf::RectangleShape grid[][9]) {
+void openEmptyCells(int board[][100], int row, int col, sf::RectangleShape grid[][100], int Rows, int Cols) {
 
+	for (int i = row - 1; i <= row + 1; i++) {
+		for (int j = col - 1; j <= col + 1; j++) {
+			if (i >= Rows || j >= Cols || i < 0 || j < 0)
+				continue;                                   // outside the board
+			if (grid[i][j].getFillColor() == sf::Color::Red)
+				continue;                                   // flagged cells stay closed
+			if (grid[i][j].getFillColor() == sf::Color::Transparent)
+				continue;                                   // already open: stops endless recursion
 
-	if (row < 9 && col < 9)
-	{
-		for (int i = row - 1;i <= row + 1;i++) {
-			for (int j = col - 1;j <= col + 1;j++) {
-				if (i > 8 || j > 8 || i < 0 || j < 0) {
-					continue;
-				}
-				if (grid[i][j].getFillColor() == sf::Color::Red) {
-					continue;
-				}
-				if (grid[i][j].getFillColor() == sf::Color::Transparent) {
-					continue;// stops empty cells from calling function again and again
-				}
-				grid[i][j].setFillColor(sf::Color::Transparent);
+			grid[i][j].setFillColor(sf::Color::Transparent);
 
-				if (board[i][j] == 0) {
-					int r = i;
-					int c = j;
-					openEmptyCells(board, r, c, grid);
-				}
-
-			}
+			if (board[i][j] == 0)
+				openEmptyCells(board, i, j, grid, Rows, Cols);
 		}
 	}
 }
 
-int main()
-{
-	//cpp
-	srand(time(0));                      //to place random mines(according to current time)
-	int board[9][9];
 
-	int rows = 9, cols = 9, mines;
+int play(int rows, int cols, int mines) {          // CHANGED: values now come from the level button
+
+	srand((unsigned)time(0));
+	int board[100][100];
+
+	// CHANGED: removed "int rows = 20, cols = 20, mines = 60;"
 	int totalcells = rows * cols;
 
-	mines = 10;
-	makeBoard(board);
-	placeMines(board, mines, 4, 4);
-	minesCount(board);
-	for (int i = 0;i < 9;i++) {
-		for (int j = 0;j < 9;j++) {
-			if (board[i][j] >= 0) {
-				cout << " ";
-			}
-			cout << board[i][j] << " ";
-		}
-		cout << endl;
-	}
-	//play(board, vBoard, totalcells, mines);
+	// %%%%%%%%%%%%% FIXED CELL SIZE AND GAP %%%%%%%%%%%%%
+	float csize = 38;
+	float gap = 8;
+	float step = csize + gap;
+	float headerH = 50;
 
 
+	float wind_x = 1500;
+	float wind_y = 1000;
 
+	makeBoard(board, rows, cols);                    // mines are placed on the first click
 
-
-
-//
-
-	sf::RenderWindow window(sf::VideoMode({ 900, 900 }), "Minesweeper");
+	sf::RenderWindow window(sf::VideoMode({ 1500,1000 }), "Minesweeper");
 	int win = 0;
 	int over = 0;
 	int flag = 0;
-	float wind_x = 900;
-	float wind_y = 900;
-	int csize = 50;
-	int gap = 10;
 	sf::Font font("DenitahStellar.ttf");
 
+	// %%%%%%%%%%%%% CENTERING: start = (free space) / 2 %%%%%%%%%%%%%
+	float boardW = cols * csize + (cols - 1) * gap;
+	float boardH = rows * csize + (rows - 1) * gap;
+	float startX = (wind_x - boardW) / 2;                              // left-right center
+	float startY = headerH + (wind_y - headerH - boardH) / 2;          // center of the space under the header
 
-	sf::RectangleShape grid[9][9];
-	for (int i = 0;i < 9;i++) {
-		for (int j = 0;j < 9;j++) {
-			grid[i][j].setSize({ 50.f,50.f });
-			grid[i][j].setOrigin({ 25.f,25.f });
+	static sf::RectangleShape grid[100][100];      // CHANGED: "static" so it is not on the stack (fixes the crash)
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < cols; j++) {
+			grid[i][j].setSize({ csize, csize });
+			grid[i][j].setPosition({ startX + j * step, startY + i * step });
 			grid[i][j].setFillColor(sf::Color(128, 128, 128));
 			grid[i][j].setOutlineThickness(-2.f);
 			grid[i][j].setOutlineColor(sf::Color::Black);
-
 		}
 	}
 
 	// %%%%%%%%%%%%% character array %%%%%%%%%
-	char Rboard[9][9];
-	for (int i = 0;i < 9;i++) {
-		for (int j = 0;j < 9;j++) {
-			if (board[i][j] == -1) {
-				Rboard[i][j] = 'M';
-			}
-			else if (board[i][j] == 0) {
-				Rboard[i][j] = ' ';
-			}
-			else
-				Rboard[i][j] = board[i][j] + 48;
-		}
-	}
-	//text 
+	char Rboard[100][100];
+	for (int i = 0; i < rows; i++)
+		for (int j = 0; j < cols; j++)
+			Rboard[i][j] = ' ';
+	bool firstclick = true;
 
-	char ch = '"s"';
-	sf::Text text(font, ch, 36);
-	text.setFillColor(sf::Color::Magenta);
-	sf::FloatRect Tbounds = text.getLocalBounds();
-	text.setOrigin(Tbounds.position + Tbounds.size / 2.f);
+	//text
+	char ch = 's';
 
-	sf::Text won(font, "GAME WON!", 200);
-	won.setPosition({ 250, 250 });
-	won.setFillColor(sf::Color::Green);
-	sf::Text flagCount(font, char(flag + '0'), 70);
-	flagCount.setPosition({ 200,50 });
+	sf::Text heading1(font, "flags: ", 50);
+	heading1.setPosition({ 30, 10 });
+	heading1.setFillColor(sf::Color::Black);
+
+	sf::Text flagCount(font, to_string(flag), 50);
+	flagCount.setPosition({ 220, 10 });
 	flagCount.setFillColor(sf::Color::Black);
 
-	sf::Text heading1(font, "flags: ", 70);
-	heading1.setPosition({ 50,50 });
-	heading1.setFillColor(sf::Color::Black);
-	sf::Text gameOver(font, "GAME OVER", 100);
-	gameOver.setPosition({ 350.f, 350.f });
-	gameOver.Bold;
+	sf::Text gameOver(font, "GAME OVER", 80);
+	gameOver.setStyle(sf::Text::Bold);
 	gameOver.setFillColor(sf::Color::Red);
-	gameOver.setCharacterSize(100);
+	gameOver.setOutlineThickness(3.f);
+	gameOver.setOutlineColor(sf::Color::White);
+	//sf::FloatRect goBounds = gameOver.getLocalBounds();
+	//gameOver.setOrigin(goBounds.position + goBounds.size / 2.f);   // origin = center of the text
+	gameOver.setPosition({ wind_x / 2, wind_y / 2 });              // text center = window center
 
+
+	sf::Text won(font, "GAME WON!", 80);
+	won.setStyle(sf::Text::Bold);
+	won.setFillColor(sf::Color(0, 150, 0));
+	won.setOutlineThickness(3.f);
+	won.setOutlineColor(sf::Color::White);
+	/*sf::FloatRect wonBounds = won.getLocalBounds();
+	won.setOrigin(wonBounds.position + wonBounds.size / 2.f);*/
+	won.setPosition({ wind_x / 2, wind_y / 2 });
 
 
 	// %%%%%%%%%%%%%%%%%% sprites &&&&&&&&&&&&&&&&&&&&&
@@ -231,13 +169,12 @@ int main()
 		cout << "error";
 	}
 
+	// scale = wanted size (50) / picture width, so the picture fits one cell
 	sf::Sprite flag_img(texture2);
-	flag_img.setScale({ 0.04f,0.04f });
+	flag_img.setScale({ csize / texture2.getSize().x, csize / texture2.getSize().x });
 
 	sf::Sprite bomb(texture);
-	//sf::FloatRect bounds = sprite.getLocalBounds();
-	//sprite.setOrigin(bounds.position + bounds.size / 2.f);
-	bomb.setScale({ 0.06f,0.06f });
+	bomb.setScale({ csize / texture.getSize().x, csize / texture.getSize().x });
 
 
 	window.setFramerateLimit(60);
@@ -252,41 +189,59 @@ int main()
 			//mouse click
 			if (const auto* mousePressed = event->getIf<sf::Event::MouseButtonPressed>())
 			{
+				if (over == 1 || win == 1)
+					continue;                                  // game finished: ignore clicks
 
-				int mouseX = sf::Mouse::getPosition(window).x;
-				int mouseY = sf::Mouse::getPosition(window).y;
-				int relativeX = mouseX - 155;
-				int relativeY = mouseY - 155;
+				float relativeX = mousePressed->position.x - startX;   // distance from board's top-left corner
+				float relativeY = mousePressed->position.y - startY;
 
-				int clicks = 0;
 				if (mousePressed->button == sf::Mouse::Button::Left)
 				{
-					for (int i = 0;i < 9;i++) {
-						for (int j = 0;j < 9;j++) {
-							if (relativeX >= j * gap + 50 * j && relativeX <= j * gap + (50 * j) + 50 && relativeY >= i * gap + 50 * i && relativeY <= i * gap + (50 * i) + 50)
-							{ //total len of gap till start + end(+50)
-
-
-								if (grid[i][j].getFillColor() != sf::Color::Red)
+					for (int i = 0; i < rows; i++) {
+						for (int j = 0; j < cols; j++) {
+							if (relativeX >= j * step && relativeX <= j * step + csize && relativeY >= i * step && relativeY <= i * step + csize)
+							{
+								if (grid[i][j].getFillColor() == sf::Color(128, 128, 128))   // closed, unflagged cell
 								{
-									grid[i][j].setFillColor(sf::Color::Transparent);
-									if (board[i][j] == 0) {
-										openEmptyCells(board, i, j, grid);
-									}
-									if (Rboard[i][j] == 'M') {
-										for (int i = 0;i < 9;i++) {
-											for (int j = 0;j < 9;j++) {
-												if (Rboard[i][j] == 'M')
-												{
-													grid[i][j].setFillColor(sf::Color::Transparent);
-												}
-												over = 1;
+									if (firstclick)
+									{
+										placeMines(board, rows, cols, mines, i, j);   // clicked cell is the safe cell
+										minesCount(board, rows, cols);
 
+										for (int a = 0; a < rows; a++)
+										{
+											for (int b = 0; b < cols; b++)
+											{
+												if (board[a][b] == -1) Rboard[a][b] = 'M';
+												else if (board[a][b] == 0) Rboard[a][b] = ' ';
+												else Rboard[a][b] = board[a][b] + 48;
 											}
 										}
+										firstclick = false;
+									}
+
+									grid[i][j].setFillColor(sf::Color::Transparent);
+									if (board[i][j] == 0)
+										openEmptyCells(board, i, j, grid, rows, cols);
+
+									if (Rboard[i][j] == 'M') {
+										over = 1;
+										for (int a = 0; a < rows; a++)
+											for (int b = 0; b < cols; b++)
+												if (Rboard[a][b] == 'M')
+													grid[a][b].setFillColor(sf::Color::Transparent);
+									}
+									else {
+										// win check: every cell that is not a mine is open
+										int opened = 0;
+										for (int a = 0; a < rows; a++)
+											for (int b = 0; b < cols; b++)
+												if (grid[a][b].getFillColor() == sf::Color::Transparent)
+													opened++;
+										if (opened == totalcells - mines)
+											win = 1;
 									}
 								}
-
 							}
 						}
 					}
@@ -294,123 +249,209 @@ int main()
 
 				if (mousePressed->button == sf::Mouse::Button::Right)
 				{
-					for (int i = 0;i < 9;i++) {
-						for (int j = 0;j < 9;j++) {
-
-							if (relativeX >= j * gap + 50 * j && relativeX <= j * gap + (50 * j) + 50 && relativeY >= i * gap + 50 * i && relativeY <= i * gap + (50 * i) + 50) { //total len of gap till start + end(+50)
-								if (grid[i][j].getFillColor() != sf::Color::Red)
+					for (int i = 0; i < rows; i++) {
+						for (int j = 0; j < cols; j++) {
+							if (relativeX >= j * step && relativeX <= j * step + csize && relativeY >= i * step && relativeY <= i * step + csize)
+							{
+								if (grid[i][j].getFillColor() == sf::Color(128, 128, 128))
 								{
 									grid[i][j].setFillColor(sf::Color::Red);
 									flag++;
-									flagCount.setString(char(flag + '0'));
-									//sprite
-
-
+									flagCount.setString(to_string(flag));
 								}
-								else {
+								else if (grid[i][j].getFillColor() == sf::Color::Red) {
 									grid[i][j].setFillColor(sf::Color(128, 128, 128));
 									flag--;
-									flagCount.setString(char(flag + '0'));
-
-
+									flagCount.setString(to_string(flag));
 								}
-
+								// an opened (transparent) cell cannot be flagged
 							}
 						}
 					}
 				}
 			}
-
 		}
 
 
 		window.draw(flagCount);
 		window.draw(heading1);
-		//drawing
-		float tx = 155;  //
-		float ty = 155;
-		//text drawing
 
-
-		for (int i = 0;i < 9;i++) {
-			for (int j = 0;j < 9;j++) {
-
-
-
+		//numbers and bombs (hidden under the gray squares)
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++) {
 
 				ch = Rboard[i][j];
-				sf::Text text(font, ch, 36);
-				text.setFillColor(sf::Color::Black);
-				text.setPosition({ tx,ty });
-				bomb.setPosition({ tx,ty });
+				float cellX = startX + j * step;
+				float cellY = startY + i * step;
+
 				if (ch == 'M') {
+					bomb.setPosition({ cellX, cellY });
 					window.draw(bomb);
 				}
-				else
+				else if (ch != ' ')
 				{
-					text.setPosition({ tx + 10,ty + 10 });
-					if (text.getString() == '1') {
-						text.setFillColor(sf::Color::Blue);
+					sf::Text num(font, string(1, ch), 36);
+					switch (ch) {
+					case '1': num.setFillColor(sf::Color::Blue); break;
+					case '2': num.setFillColor(sf::Color(0, 128, 0)); break;
+					case '3': num.setFillColor(sf::Color::Red); break;
+
+					default:  num.setFillColor(sf::Color(100, 100, 100)); break;
 					}
-					else if (text.getString() == '2') {
-						text.setFillColor(sf::Color::Green);
-					}
-					else if (text.getString() == '3') {
-						text.setFillColor(sf::Color::Red);
-					}
-					window.draw(text);
+					sf::FloatRect nb = num.getLocalBounds();
+					num.setOrigin(nb.position + nb.size / 2.f);                       // center of the digit
+					num.setPosition({ cellX + csize / 2, cellY + csize / 2 });        // center of the cell
+					window.draw(num);
 				}
-
-				tx = tx + 60;
-
 			}
-			tx = 155;
-			ty = ty + 60;
 		}
 
-
-		//grid drawing
-		int numCells = 9;
-		int position_formula = (((wind_x / numCells) - csize - gap) / 2) * numCells;
-		float posx = position_formula;
-		float posy = 180;
-		grid[0][0].setPosition({ posx,posy });
-		for (int i = 0;i < 9;i++) {
-			posx = 180;
-			for (int j = 0;j < 9;j++) {
-				grid[i][j].setPosition({ posx,posy });
+		//grid drawing (on top of the numbers)
+		for (int i = 0; i < rows; i++)
+			for (int j = 0; j < cols; j++)
 				window.draw(grid[i][j]);
-				posx += csize + gap;
 
-			}
-			posy += csize + gap;
-		}
-
-		//window.draw(flag_img);
-		if (over == 1) {
-			window.draw(gameOver);
-		}
-
-
-		for (int i = 0;i < 9;i++) {
-			for (int j = 0;j < 9;j++)
-			{
+		//flag pictures on red cells
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++) {
 				if (grid[i][j].getFillColor() == sf::Color::Red)
 				{
-					flag_img.setPosition({ float(j * gap + 50 * j) + 155 ,float(i * gap + 50 * i) + 155 });
+					flag_img.setPosition({ startX + j * step, startY + i * step });
 					window.draw(flag_img);
 				}
-
-
 			}
 		}
 
+		if (over == 1)
+			window.draw(gameOver);
+		if (win == 1)
+			window.draw(won);
+
+		window.display();
+	}
+	return 0;
+
+}
 
 
 
+//// &&&&&&&&&&&&&&&&&&&&&& main &&&&&&&&&&&&&&&&&&&&&&&&&&
+int main()
+{
+	sf::RenderWindow window(sf::VideoMode({ 1500, 1000 }), "MINESWEEPER");
 
-		//window.draw(text);
+
+	sf::Font font("DenitahStellar.ttf");
+
+	sf::Text levels(font, "Choose Level", 100);
+	levels.setFillColor(sf::Color::Cyan);
+	levels.setPosition({ 500,250 });
+	levels.setOutlineThickness(-2);
+	levels.setOutlineColor(sf::Color::Black);
+
+	sf::RectangleShape basic({ 250,130 });
+	basic.setPosition({ 300,400 });
+	basic.setOutlineColor(sf::Color::Green);
+	basic.setFillColor(sf::Color::Green);
+
+	sf::Text basicH(font, "BASIC", 100);
+	basicH.setOutlineThickness(-2);
+	basicH.setOutlineColor(sf::Color::Black);
+	basicH.setPosition({ 300,400 });
+
+
+	sf::RectangleShape inter({ 250,130 });
+	inter.setPosition({ 600,400 });
+	inter.setOutlineColor(sf::Color::Green);
+	inter.setFillColor(sf::Color::Yellow);
+
+	sf::Text interH(font, "INTER", 100);
+	interH.setOutlineThickness(-2);
+	interH.setOutlineColor(sf::Color::Black);
+	interH.setPosition({ 600,400 });
+
+
+
+	sf::RectangleShape hard({ 250,130 });
+	hard.setPosition({ 900,400 });
+	hard.setOutlineColor(sf::Color::Green);
+	hard.setFillColor(sf::Color::Red);
+
+	sf::Text hardH(font, "HARD", 100);
+	hardH.setOutlineThickness(-2);
+	hardH.setOutlineColor(sf::Color::Black);
+	hardH.setPosition({ 900,400 });
+
+
+
+	sf::FloatRect boundsB = basic.getGlobalBounds();
+	sf::FloatRect boundsI = inter.getGlobalBounds();
+	sf::FloatRect boundsH = hard.getGlobalBounds();
+
+	while (window.isOpen())
+	{
+		while (const std::optional event = window.pollEvent())
+		{
+			if (event->is<sf::Event::Closed>())
+			{
+				window.close();
+			}
+
+
+
+			//detect click 
+			if (const auto* mousePressed = event->getIf<sf::Event::MouseButtonPressed>())
+			{
+
+				int mouseX = mousePressed->position.x;
+				int mouseY = mousePressed->position.y;
+				if (mousePressed->button == sf::Mouse::Button::Left) {
+
+					//easy
+					if (mouseX >= boundsB.position.x &&
+						mouseX <= boundsB.position.x + boundsB.size.x &&
+						mouseY >= boundsB.position.y &&
+						mouseY <= boundsB.position.y + boundsB.size.y) {
+
+						play(9, 9, 12);          // CHANGED: basic level
+					}
+
+					//inter
+					if (mouseX >= boundsI.position.x &&
+						mouseX <= boundsI.position.x + boundsI.size.x &&
+						mouseY >= boundsI.position.y &&
+						mouseY <= boundsI.position.y + boundsI.size.y) {
+
+						play(16, 16, 40);        // CHANGED: intermediate level
+					}
+					///hard
+					if (mouseX >= boundsH.position.x &&
+						mouseX <= boundsH.position.x + boundsH.size.x &&
+						mouseY >= boundsH.position.y &&
+						mouseY <= boundsH.position.y + boundsH.size.y) {
+
+						play(20, 20, 60);        // CHANGED: hard level
+					}
+				}
+			}
+
+
+
+		}
+
+		window.clear(sf::Color::White);
+		window.draw(levels);
+		window.draw(basic);
+		window.draw(basicH);
+		window.draw(inter);
+		window.draw(interH);
+		window.draw(hard);
+		window.draw(hardH);
+
+
+
 		window.display();
 	}
 
+	return 0;
 }
