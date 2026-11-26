@@ -144,8 +144,8 @@ int play(int rows, int cols, int mines) {
 	gameOver.setFillColor(sf::Color::Red);
 	gameOver.setOutlineThickness(3.f);
 	gameOver.setOutlineColor(sf::Color::White);
-	//sf::FloatRect goBounds = gameOver.getLocalBounds();
-	//gameOver.setOrigin(goBounds.position + goBounds.size / 2.f);   // origin = center of the text
+	sf::FloatRect goBounds = gameOver.getLocalBounds();
+	gameOver.setOrigin(goBounds.position + goBounds.size / 2.f);   // origin = center of the text
 	gameOver.setPosition({ wind_x / 2, wind_y / 2 });              // text center = window center
 
 
@@ -154,8 +154,8 @@ int play(int rows, int cols, int mines) {
 	won.setFillColor(sf::Color(0, 150, 0));
 	won.setOutlineThickness(3.f);
 	won.setOutlineColor(sf::Color::White);
-	/*sf::FloatRect wonBounds = won.getLocalBounds();
-	won.setOrigin(wonBounds.position + wonBounds.size / 2.f);*/
+	sf::FloatRect wonBounds = won.getLocalBounds();
+	won.setOrigin(wonBounds.position + wonBounds.size / 2.f);
 	won.setPosition({ wind_x / 2, wind_y / 2 });
 
 
