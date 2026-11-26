@@ -25,8 +25,8 @@ void placeMines(int board[][100], int rows, int cols, int mines, int saferow, in
 		int x = rand() % rows;              //for random cell
 		int y = rand() % cols;
 		if (x == saferow && y == safecol)
-			continue;                       // the first click cannot be a mine
-		if (board[x][y] != -1)              // if there is already a mine, skip it
+			continue;                       // first  click safe
+		if (board[x][y] != -1)              
 		{
 			board[x][y] = -1;
 			n++;
@@ -35,7 +35,7 @@ void placeMines(int board[][100], int rows, int cols, int mines, int saferow, in
 }
 
 
-// %%%%%%%%%%%% COUNT MINES AROUND EACH CELL %%%%%%%%%%%%
+// %%%%%%%%%%%% COUNT MINES AROUND EACH CELL %%%%%%%
 
 void minesCount(int board[][100], int rows, int cols)
 {
@@ -57,7 +57,7 @@ void minesCount(int board[][100], int rows, int cols)
 }
 
 
-// &&&&&&&&&& empty cells open &&&&&&&&&&&&
+// &&&&&&&&&& empty cells open &&&&&&
 void openEmptyCells(int board[][100], int row, int col, sf::RectangleShape grid[][100], int Rows, int Cols) {
 
 	for (int i = row - 1; i <= row + 1; i++) {
@@ -67,7 +67,7 @@ void openEmptyCells(int board[][100], int row, int col, sf::RectangleShape grid[
 			if (grid[i][j].getFillColor() == sf::Color::Red)
 				continue;                                   // flagged cells stay closed
 			if (grid[i][j].getFillColor() == sf::Color::Transparent)
-				continue;                                   // already open: stops endless recursion
+				continue;                                   // already open, stops endless recursion
 
 			grid[i][j].setFillColor(sf::Color::Transparent);
 
@@ -78,15 +78,15 @@ void openEmptyCells(int board[][100], int row, int col, sf::RectangleShape grid[
 }
 
 
-int play(int rows, int cols, int mines) {          // CHANGED: values now come from the level button
+int play(int rows, int cols, int mines) {          
 
 	srand((unsigned)time(0));
 	int board[100][100];
 
-	// CHANGED: removed "int rows = 20, cols = 20, mines = 60;"
+	
 	int totalcells = rows * cols;
 
-	// %%%%%%%%%%%%% FIXED CELL SIZE AND GAP %%%%%%%%%%%%%
+	// %%%%%%%%%%%%% FIXED CELL SIZE AND GAP %%%%%%%%%%
 	float csize = 38;
 	float gap = 8;
 	float step = csize + gap;
@@ -96,7 +96,7 @@ int play(int rows, int cols, int mines) {          // CHANGED: values now come f
 	float wind_x = 1500;
 	float wind_y = 1000;
 
-	makeBoard(board, rows, cols);                    // mines are placed on the first click
+	makeBoard(board, rows, cols);                   
 
 	sf::RenderWindow window(sf::VideoMode({ 1500,1000 }), "Minesweeper");
 	int win = 0;
@@ -104,13 +104,13 @@ int play(int rows, int cols, int mines) {          // CHANGED: values now come f
 	int flag = 0;
 	sf::Font font("DenitahStellar.ttf");
 
-	// %%%%%%%%%%%%% CENTERING: start = (free space) / 2 %%%%%%%%%%%%%
+	// %%%%%%%%%%%%% centre== start =free space / 2 %%%%%%%%%%%%%
 	float boardW = cols * csize + (cols - 1) * gap;
 	float boardH = rows * csize + (rows - 1) * gap;
-	float startX = (wind_x - boardW) / 2;                              // left-right center
-	float startY = headerH + (wind_y - headerH - boardH) / 2;          // center of the space under the header
+	float startX = (wind_x - boardW) / 2;                              // left right center
+	float startY = headerH + (wind_y - headerH - boardH) / 2;         
 
-	static sf::RectangleShape grid[100][100];      // CHANGED: "static" so it is not on the stack (fixes the crash)
+	static sf::RectangleShape grid[100][100];    
 	for (int i = 0; i < rows; i++) {
 		for (int j = 0; j < cols; j++) {
 			grid[i][j].setSize({ csize, csize });
@@ -169,7 +169,7 @@ int play(int rows, int cols, int mines) {          // CHANGED: values now come f
 		cout << "error";
 	}
 
-	// scale = wanted size (50) / picture width, so the picture fits one cell
+	// scale = wanted size (50) / picture width so the picture fits one cell
 	sf::Sprite flag_img(texture2);
 	flag_img.setScale({ csize / texture2.getSize().x, csize / texture2.getSize().x });
 
@@ -190,9 +190,9 @@ int play(int rows, int cols, int mines) {          // CHANGED: values now come f
 			if (const auto* mousePressed = event->getIf<sf::Event::MouseButtonPressed>())
 			{
 				if (over == 1 || win == 1)
-					continue;                                  // game finished: ignore clicks
+					continue;                                  // game finished now ignore clicks
 
-				float relativeX = mousePressed->position.x - startX;   // distance from board's top-left corner
+				float relativeX = mousePressed->position.x - startX;   // distance from board top-left corner
 				float relativeY = mousePressed->position.y - startY;
 
 				if (mousePressed->button == sf::Mouse::Button::Left)
@@ -205,7 +205,7 @@ int play(int rows, int cols, int mines) {          // CHANGED: values now come f
 								{
 									if (firstclick)
 									{
-										placeMines(board, rows, cols, mines, i, j);   // clicked cell is the safe cell
+										placeMines(board, rows, cols, mines, i, j);   
 										minesCount(board, rows, cols);
 
 										for (int a = 0; a < rows; a++)
@@ -232,7 +232,7 @@ int play(int rows, int cols, int mines) {          // CHANGED: values now come f
 													grid[a][b].setFillColor(sf::Color::Transparent);
 									}
 									else {
-										// win check: every cell that is not a mine is open
+										// win check
 										int opened = 0;
 										for (int a = 0; a < rows; a++)
 											for (int b = 0; b < cols; b++)
@@ -264,7 +264,7 @@ int play(int rows, int cols, int mines) {          // CHANGED: values now come f
 									flag--;
 									flagCount.setString(to_string(flag));
 								}
-								// an opened (transparent) cell cannot be flagged
+								// an opened cell cannot be flagged
 							}
 						}
 					}
@@ -413,7 +413,7 @@ int main()
 						mouseY >= boundsB.position.y &&
 						mouseY <= boundsB.position.y + boundsB.size.y) {
 
-						play(9, 9, 12);          // CHANGED: basic level
+						play(9, 9, 12);      
 					}
 
 					//inter
@@ -422,7 +422,7 @@ int main()
 						mouseY >= boundsI.position.y &&
 						mouseY <= boundsI.position.y + boundsI.size.y) {
 
-						play(16, 16, 40);        // CHANGED: intermediate level
+						play(16, 16, 40);        
 					}
 					///hard
 					if (mouseX >= boundsH.position.x &&
@@ -430,7 +430,7 @@ int main()
 						mouseY >= boundsH.position.y &&
 						mouseY <= boundsH.position.y + boundsH.size.y) {
 
-						play(20, 20, 60);        // CHANGED: hard level
+						play(20, 20, 60);        
 					}
 				}
 			}
